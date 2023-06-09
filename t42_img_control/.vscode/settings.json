@@ -1,0 +1,12 @@
+{
+    "C_Cpp.errorSquiggles": "disabled",
+    "files.associations": {
+        "vector": "cpp",
+        "*.tcc": "cpp",
+        "limits": "cpp",
+        "type_traits": "cpp",
+        "iostream": "cpp",
+        "deque": "cpp",
+        "string": "cpp"
+    }
+}
