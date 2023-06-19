@@ -11,8 +11,13 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
+  sensor_msgs
+  cv_bridge
+  image_transport
+  dynamixel_workbench_msgs
+  mg400_bringup # dobot
 )
-
+find_package(OpenCV REQUIRED)
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
@@ -116,8 +121,9 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-# include
+  include
   ${catkin_INCLUDE_DIRS}
+  ${OpenCV_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
@@ -204,3 +210,8 @@ include_directories(
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
+add_executable(soft_img_control src/main.cpp src/imgProc.cpp src/control.cpp)
+target_link_libraries(soft_img_control ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+
+add_executable(mg400 src/test/mg400.cpp)
+target_link_libraries(mg400 ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})

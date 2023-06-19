@@ -1,0 +1,16 @@
+<launch>
+    <!-- mg400_bringup: mg400_bringup.launch -->
+    <arg name="robot_ip" doc="IP of the controller" default="192.168.5.1"/>
+    <param name="robot_description" textfile="$(find mg400_description)/urdf/mg400_description.urdf"/>
+    <node name="mg400_bringup" pkg="mg400_bringup" type="mg400_bringup"  required="true" output="screen">
+        <param name="joint_publish_rate" type="double" value="10"/>
+        <param name="trajectory_duration" type="double" value="0.3"/>
+        <param name="robot_ip_address" type="str" value="192.168.1.6"/>
+    </node>
+    <node name="robot_state_publisher" pkg="robot_state_publisher"  required="true" type="robot_state_publisher"/>
+    <node name="rviz" pkg="rviz" type="rviz"  required="true" args="-d $(find mg400_description)/rviz/urdf.rviz"/>
+
+    <!-- softhand_mg400_img_control -->
+    <node name="mg400" pkg="softhand_mg400_img_control" type="mg400" output="screen"></node>
+
+</launch>

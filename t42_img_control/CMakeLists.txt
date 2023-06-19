@@ -54,8 +54,8 @@ find_package(OpenCV REQUIRED)
 ## Generate messages in the 'msg' folder
 # add_message_files(
 #   FILES
-#   Message1.msg
-#   Message2.msg
+#   # Message1.msg
+#   # Message2.msg
 # )
 
 ## Generate services in the 'srv' folder
@@ -216,6 +216,9 @@ target_link_libraries(pylon_img_show  ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 
 add_executable(dynamixel_client src/tutorial/dynamixel_client.cpp)
 target_link_libraries(dynamixel_client ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+
+add_executable(dynamixel_master_slave src/tutorial/dynamixel_master_slave.cpp)
+target_link_libraries(dynamixel_master_slave ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 
 add_executable(hsv_checker src/tutorial/hsv_checker.cpp)
 target_link_libraries(hsv_checker ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})

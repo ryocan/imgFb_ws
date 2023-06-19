@@ -96,8 +96,8 @@ int main(int argc, char** argv)
     createTrackbar("Val max", "Track Bar:OBJ", &vmax_obj, 255);
 
     // subscriber setting
-    // image_transport::Subscriber img_sub = it.subscribe("/pylon_camera_node/image_raw", 1, imgCb);
-    image_transport::Subscriber img_sub = it.subscribe("/camera/color/image_raw", 1, imgCb);
+    image_transport::Subscriber img_sub = it.subscribe("/pylon_camera_node/image_raw", 1, imgCb);
+    // image_transport::Subscriber img_sub = it.subscribe("/camera/color/image_raw", 1, imgCb);
 
     ros::spin();
 
