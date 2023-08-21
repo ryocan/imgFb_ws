@@ -69,6 +69,7 @@ vector<vector<Point>> imgProc::getContours(Mat img_mask, string mode)
     vector<vector<Point>> contours; 
     vector<Vec4i> hierarchy;
     cv::findContours(img_mask, contours, hierarchy, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
+    imshow("getContours", img_mask);
 
     // detect based on area info
     double area = 0.;

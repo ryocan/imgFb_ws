@@ -202,16 +202,10 @@ include_directories(
 ## Testing ##
 #############
 
-## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_softhand_mg400_img_control.cpp)
-# if(TARGET ${PROJECT_NAME}-test)
-#   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
-# endif()
-
-## Add folders to be run by python nosetests
-# catkin_add_nosetests(test)
-add_executable(soft_img_control src/main.cpp src/imgProc.cpp src/control.cpp)
-target_link_libraries(soft_img_control ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
-
+# control test: only robotic arm MG400
 add_executable(mg400 src/test/mg400.cpp)
 target_link_libraries(mg400 ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+
+# G2: 230701 
+add_executable(soft_img_control src/G2_230701/main.cpp src/G2_230701/imgProc.cpp src/G2_230701/control.cpp)
+target_link_libraries(soft_img_control ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
