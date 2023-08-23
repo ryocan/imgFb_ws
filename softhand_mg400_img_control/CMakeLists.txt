@@ -198,14 +198,20 @@ include_directories(
 #   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 # )
 
-#############
-## Testing ##
-#############
+########################################################################################
 
 # control test: only robotic arm MG400
 add_executable(mg400 src/test/mg400.cpp)
 target_link_libraries(mg400 ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 
+# hsv checker
+add_executable(hsv src/test/hsv_checker_photo.cpp)
+target_link_libraries(hsv ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+
 # G2: 230701 
 add_executable(soft_img_control src/G2_230701/main.cpp src/G2_230701/imgProc.cpp src/G2_230701/control.cpp)
 target_link_libraries(soft_img_control ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+
+# setup
+add_executable(setup src/setup.cpp)
+target_link_libraries(setup ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
