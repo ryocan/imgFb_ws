@@ -215,3 +215,15 @@ target_link_libraries(soft_img_control ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 # setup
 add_executable(setup src/setup.cpp)
 target_link_libraries(setup ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+
+# simulate
+add_executable(simulate src/simulate.cpp)
+target_link_libraries(simulate ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+
+# simulate with obj
+add_executable(simulate_with_obj src/simulate_with_obj.cpp)
+target_link_libraries(simulate_with_obj ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+
+# roi
+add_executable(roi src/roi.cpp)
+target_link_libraries(roi ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
