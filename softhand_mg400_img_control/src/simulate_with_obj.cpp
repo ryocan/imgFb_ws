@@ -61,13 +61,13 @@ int main(int argc, char** argv)
     ros::init(argc, argv, "simulate_with_obj");
 
     // input img
-    Mat img_input = imread("/home/umelab/imgFb_ws/src/softhand_mg400_img_control/img/input_images/with obj/input_1a.jpg");
-    imshow("img_input", img_input);
-    Mat img_output = img_input.clone();
+    Mat img_input_normal = imread("/home/umelab/imgFb_ws/src/softhand_mg400_img_control/img/input_images/with obj/input_1a.jpg");
+    imshow("img_input_normal", img_input_normal);
+    Mat img_output_contact = img_input_normal.clone();
 
     // ------------------------- < obj > ----------------------------
     // convert to mask img
-    Mat img_mask_obj = createMaskImg(img_input, 0, 15, 0, 255, 80, 255);
+    Mat img_mask_obj = createMaskImg(img_input_normal, 0, 15, 0, 255, 80, 255);
     imshow("img_mask_obj", img_mask_obj);
 
     // get contour
@@ -86,19 +86,19 @@ int main(int argc, char** argv)
             Po_N = i;
         }
     }
-    circle(img_output, contours_obj[Po_N],  8, Scalar(255,   255,   255), -1);
-    circle(img_output, contours_obj[Po_N],  6, Scalar(  0,   255,     0), -1);
-    // imshow("img_output", img_output);
+    circle(img_output_contact, contours_obj[Po_N],  8, Scalar(255,   255,   255), -1);
+    circle(img_output_contact, contours_obj[Po_N],  6, Scalar(  0,   255,     0), -1);
+    // imshow("img_output_contact", img_output_contact);
 
     // ------------------------- < hand > ----------------------------
-    Mat img_mask_hand = createMaskImg(img_input, 0, 179, 0, 255, 0, 65);
+    Mat img_mask_hand = createMaskImg(img_input_normal, 0, 179, 0, 255, 0, 65);
     imshow("img_mask_hand", img_mask_hand);
 
     // findContours from img_mask
     vector<Point> contours_hand;    
     contours_hand = getContours(img_mask_hand);
 
-    // find endpoint
+    // find endpoint candidate
     int Phb_N = 0;  // num of P_b(Point bottom)
     int Pht_N = 0;  // num of P_t(Point top)
     int Pht_y_prev = 0;
@@ -111,7 +111,6 @@ int main(int argc, char** argv)
 
     for (int i = 0; i < contours_hand.size(); i++)
     {
-        // find Pb
         if(contours_hand[i].y < Phb_y_prev)
         {
             Phb_y_prev = contours_hand[i].y;
@@ -124,93 +123,141 @@ int main(int argc, char** argv)
         }
     }
 
-    // for (int i = 0; i < contours.size(); i++)
-    // {
-    //     if(contours[i].y < contours[Pb_N].y + 10)
-    //     {
-    //         if(contours[i].x < Pbl_x_prev)
-    //         {
-    //             Pbl_x_prev = contours[i].x;
-    //             Pbl_N = i;
-    //         }
-    //     }
-    //     if(contours[i].y < contours[Pt_N].y - 2)
-    //     {
-    //         if(contours[i].x < Ptl_x_prev)
-    //         {
-    //             Ptl_x_prev = contours[i].x;
-    //             Ptl_N = i;
-    //         }
-    //     }
-    // }
+    // find endpoint
+    for (int i = 0; i < contours_hand.size(); i++)
+    {
+        if(contours_hand[i].y < contours_hand[Phb_N].y + 10)
+        {
+            if(contours_hand[i].x < Phbl_x_prev)
+            {
+                Phbl_x_prev = contours_hand[i].x;
+                Phbl_N = i;
+            }
+        }
+        if(contours_hand[i].y < contours_hand[Pht_N].y - 2)
+        {
+            if(contours_hand[i].x < Phtl_x_prev)
+            {
+                Phtl_x_prev = contours_hand[i].x;
+                Phtl_N = i;
+            }
+        }
+    }
 
-    // // pointout
-    // circle(img_output, contours[Pbl_N],  8, Scalar(255,   255,   255), -1);
-    // circle(img_output, contours[Pbl_N],  6, Scalar(255,   0,   0), -1);
-    // circle(img_output, contours[Ptl_N],  8, Scalar(255,   255,   255), -1);
-    // circle(img_output, contours[Ptl_N],  6, Scalar(255,   0,   0), -1);
-    // imshow("img_output", img_output);
+    // pointout
+    circle(img_output_contact, contours_hand[Phbl_N],  8, Scalar(255,   255,   255), -1);
+    circle(img_output_contact, contours_hand[Phbl_N],  6, Scalar(255,   0,   0), -1);
+    circle(img_output_contact, contours_hand[Phtl_N],  8, Scalar(255,   255,   255), -1);
+    circle(img_output_contact, contours_hand[Phtl_N],  6, Scalar(255,   0,   0), -1);
+    imshow("img_output_contact", img_output_contact);
 
-    // Mat img_output2 = img_output.clone();
+    // ------------------------- < divide hand into segment > ----------------------------
+    int segment_N = 5;
+    double setup_angle = -0.471537;
+    double setup_length = contours_hand[Phtl_N].y - contours_hand[Phbl_N].y;
+    cout << "setup_length: " << setup_length << endl;
 
-    // // initialize
-    // double length_init = contours[Ptl_N].y - contours[Pbl_N].y;
-    // double angle_init = -0.471537;
+    double segment_length_init = setup_length / segment_N;
+    cout << "setup_length_init: " << segment_length_init << endl;
 
-    // // part
-    // int link_num = 8;
-    // double length_part = length_init / link_num;
-    // cout << "length_part: " << length_part << endl;
-    // double angle_part_init = angle_init / link_num;
-    // double angle_part = 0;
+    // ------------------------- < where to contact > ----------------------------
+    double length_contact = contours_obj[Po_N].y - contours_hand[Phbl_N].y;
+    cout << "length_contact: " << length_contact << endl;
 
-    // // divide
-    // vector<Point> position_link;
-    // Point position_standard;
-    // position_standard = contours[Pbl_N];
+    double length_contact_acc = 0;  // acc = accumulate
+    int contact_N = 0;
+    for (int i = 0; i < segment_N; i++)
+    {
+        length_contact_acc += segment_length_init;
+        if ( length_contact < length_contact_acc )
+        {
+            contact_N = i;
+            cout << "contact segment: " << i << endl;
+            break;
+        } 
+    }
 
-    // for (int i = 0; i < link_num; i++)
-    // {
-    //     angle_part = angle_part_init * (2 * i+ 1);
-    //     cout << "angle_part: " << angle_part << endl;
-    //     double slope = tan(3.14/2 - angle_part);
-    //     cout << "slope: " << slope << endl; 
-    //     cout << "position_standard: " << position_standard << endl; 
+    // ------------------------- < curve estimation > ----------------------------
+    Mat img_output_est = img_input_normal.clone();
+    
+    vector<Point> estimated_points; // results
 
-    //     int j = 0;
-    //     while(true)
-    //     {
-    //         int x = position_standard.x - j;
-    //         double y = slope * (x - position_standard.x) + position_standard.y;
-    //         if( sqrt(pow(x - position_standard.x, 2) + pow(y - position_standard.y, 2)) > length_part)
-    //         {
-    //             position_link.push_back(Point(x, (int)y));
-    //             line(img_output2, position_standard, Point(x, (int)y), Scalar(255, 255, 255), 3, 8);
-    //             position_standard = Point(x, (int)y);
-    //             cout << "-----" << endl;
-    //             break;
-    //         }
+    Point point_standard;
+    point_standard = contours_hand[Phbl_N];
+    estimated_points.push_back(point_standard);
 
-    //         j++;
-    //     }
-    // }
+    // straightforward
+    for (int i = 0; i <= contact_N; i++)
+    {
+        double y = point_standard.y + segment_length_init;
+        point_standard.y = y;
+        estimated_points.push_back(point_standard);
+    }
+    
+    // remain segment and bending angle
+    int segment_remain_N = segment_N - (contact_N + 1);
+    double segment_angle_init = setup_angle / segment_remain_N;
+    double segment_angle_part = 0;
+    
+    // curve estimation
+    for (int i = 0; i < segment_remain_N; i++)  
+    {
+        // bending angle of each segment
+        segment_angle_part = segment_angle_init * (2 * i + 1);
+        cout << "-----" << endl;
+        cout << "angle_part: " << segment_angle_part << endl;
+        
+        // calculated slope of the line from bending angle
+        double slope = tan(3.14/2 - segment_angle_part);
+        cout << "slope: " << slope << endl; 
+        cout << "point_standard: " << point_standard << endl; 
 
-    // Mat img_input3 = imread("/home/umelab/imgFb_ws/src/softhand_mg400_img_control/img/roi_close.jpg");
-    // Mat img_output3 = img_input3.clone();
+        // estimate curve end point
+        int j = 0;
+        while(true)
+        {
+            int x = point_standard.x - j;
+            double y = slope * (x - point_standard.x) + point_standard.y;
+            if( sqrt(pow(x - point_standard.x, 2) + pow(y - point_standard.y, 2)) > segment_length_init)
+            {
+                estimated_points.push_back(Point(x, (int)y));
+                point_standard = Point(x, (int)y);
+                cout << "-----" << endl;
+                break;
+            }
 
-    // for (int i = 0; i < position_link.size(); i++)
-    // {
-    //     circle(img_output2, position_link[i],  8, Scalar(255, 255, 255), -1);
-    //     circle(img_output2, position_link[i],  6, Scalar(  0,   0, 255), -1);
-    //     circle(img_output3, position_link[i],  8, Scalar(255, 255, 255), -1);
-    //     circle(img_output3, position_link[i],  6, Scalar(  0,   0, 255), -1);
-    // }
-    // circle(img_output3, contours[Pbl_N],  8, Scalar(255,   255,   255), -1);
-    // circle(img_output3, contours[Pbl_N],  6, Scalar(255,   0,   0), -1);
-    // imshow("img_output2", img_output2);
-    // imshow("img_output3", img_output3);
+            j++;
+        }
 
+    }
 
+    // show result
+    for (int i = 0; i < estimated_points.size(); i++)
+    {
+        circle(img_output_est, estimated_points[i],  8, Scalar(255,   255,   255), -1);
+        circle(img_output_est, estimated_points[i],  6, Scalar(255,   0,   0), -1);
+    }
+    imshow("img_output_est", img_output_est);
+
+    // ------------------------- < check result > ----------------------------
+    Mat img_input_curve = imread("/home/umelab/imgFb_ws/src/softhand_mg400_img_control/img/input_images/with obj/input_1b.jpg");
+    Mat img_output_curve = img_input_curve.clone();
+    for (int i = 0; i < estimated_points.size(); i++)
+    {
+        circle(img_output_curve, estimated_points[i],  8, Scalar(255,   255,   255), -1);
+        circle(img_output_curve, estimated_points[i],  6, Scalar(255,   0,   0), -1);
+    }
+    imshow("img_output_curve", img_output_curve);
+
+    // ------------------------- < output > ----------------------------
+    imwrite("/home/umelab/imgFb_ws/src/softhand_mg400_img_control/img/simulate_with_obj/img_input_normal_" + to_string(segment_N) + ".jpg", img_input_normal);
+    imwrite("/home/umelab/imgFb_ws/src/softhand_mg400_img_control/img/simulate_with_obj/img_mask_obj_" + to_string(segment_N) + ".jpg", img_mask_obj);
+    imwrite("/home/umelab/imgFb_ws/src/softhand_mg400_img_control/img/simulate_with_obj/img_mask_hand_" + to_string(segment_N) + ".jpg", img_mask_hand);
+    imwrite("/home/umelab/imgFb_ws/src/softhand_mg400_img_control/img/simulate_with_obj/img_output_contact" + to_string(segment_N) + ".jpg", img_output_contact);
+    imwrite("/home/umelab/imgFb_ws/src/softhand_mg400_img_control/img/simulate_with_obj/img_output_est" + to_string(segment_N) + ".jpg", img_output_est);
+    imwrite("/home/umelab/imgFb_ws/src/softhand_mg400_img_control/img/simulate_with_obj/img_output_curve" + to_string(segment_N) + ".jpg", img_output_curve);
+
+    // -----------------------------------------------------
     int key = waitKey(0);
     if (key == 'q')
         return 0;
