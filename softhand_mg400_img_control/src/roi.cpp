@@ -5,15 +5,43 @@ int main(int argc, char** argv)
 {
     // ros setup
     ros::init(argc, argv, "roi");
+    ros::NodeHandle nh;
 
     // input img
-    Mat img_input = imread("/home/umelab/imgFb_ws/src/softhand_mg400_img_control/img/input_images/with obj/1b.jpg");
+    // string input_path;
+    // string input_img_num;
+    // string character;
+    string input_path = "/home/umelab/imgFb_ws/src/softhand_mg400_img_control/img/input_images/with obj/pear/poseB";
+    string input_img_num = "/141";
+    string character = "b";
+
+
+    //-------------------------------------------------------
+    // nh.getParam("input_path", input_path);
+    // nh.getParam("input_img_num", input_img_num);
+    // nh.getParam("character", character);
+    // cout << "input_path-----" << input_path << endl;
+    // cout << "input_img_num-----" << input_img_num << endl;
+    // cout << "character-----" << character << endl;
+
+    // int test;
+    // nh.getParam("test", character);
+    // cout << "debug: test-----" << test << endl;
+    // //-------------------------------------------------------
+    // if (nh.getParam("input_path", input_path)) {
+    //     ROS_INFO("Input path: %s", input_path.c_str());
+    // } else {
+    //     ROS_ERROR("Failed to get parameter");
+    //     return 1;
+    // }
+
+    Mat img_input= imread(input_path + input_img_num + "_" + character + ".jpg");
 
     cout << "img.cols: " << img_input.cols << endl;
     cout << "img.rows: " << img_input.rows << endl;
     Mat roi_src(img_input, cv::Rect(600, 0, 500, 1024));
     imshow("roi", roi_src);
-    imwrite("/home/umelab/imgFb_ws/src/softhand_mg400_img_control/img/input_images/with obj/input_1b.jpg", roi_src);
+    imwrite(input_path + input_img_num + "_roi_" + character +".jpg", roi_src);
 
     waitKey(0);
     return 0;

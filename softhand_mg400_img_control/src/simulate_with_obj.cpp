@@ -61,7 +61,10 @@ int main(int argc, char** argv)
     ros::init(argc, argv, "simulate_with_obj");
 
     // input img
-    Mat img_input_normal = imread("/home/umelab/imgFb_ws/src/softhand_mg400_img_control/img/input_images/with obj/input_1a.jpg");
+    string input_path = "/home/umelab/imgFb_ws/src/softhand_mg400_img_control/img/input_images/with obj/pear/poseB";
+    string input_img_num = "/141";
+
+    Mat img_input_normal = imread(input_path + input_img_num + "_roi_a.jpg");
     imshow("img_input_normal", img_input_normal);
     Mat img_output_contact = img_input_normal.clone();
 
@@ -88,10 +91,9 @@ int main(int argc, char** argv)
     }
     circle(img_output_contact, contours_obj[Po_N],  8, Scalar(255,   255,   255), -1);
     circle(img_output_contact, contours_obj[Po_N],  6, Scalar(  0,   255,     0), -1);
-    // imshow("img_output_contact", img_output_contact);
 
     // ------------------------- < hand > ----------------------------
-    Mat img_mask_hand = createMaskImg(img_input_normal, 0, 179, 0, 255, 0, 65);
+    Mat img_mask_hand = createMaskImg(img_input_normal, 0, 179, 0, 255, 0, 65); // vmax 65
     imshow("img_mask_hand", img_mask_hand);
 
     // findContours from img_mask
@@ -134,7 +136,7 @@ int main(int argc, char** argv)
                 Phbl_N = i;
             }
         }
-        if(contours_hand[i].y < contours_hand[Pht_N].y - 2)
+        if(contours_hand[Pht_N].y - 10 < contours_hand[i].y )
         {
             if(contours_hand[i].x < Phtl_x_prev)
             {
@@ -240,7 +242,7 @@ int main(int argc, char** argv)
     imshow("img_output_est", img_output_est);
 
     // ------------------------- < check result > ----------------------------
-    Mat img_input_curve = imread("/home/umelab/imgFb_ws/src/softhand_mg400_img_control/img/input_images/with obj/input_1b.jpg");
+    Mat img_input_curve = imread(input_path + input_img_num + "_roi_b.jpg");
     Mat img_output_curve = img_input_curve.clone();
     for (int i = 0; i < estimated_points.size(); i++)
     {
@@ -250,12 +252,13 @@ int main(int argc, char** argv)
     imshow("img_output_curve", img_output_curve);
 
     // ------------------------- < output > ----------------------------
-    imwrite("/home/umelab/imgFb_ws/src/softhand_mg400_img_control/img/simulate_with_obj/img_input_normal_" + to_string(segment_N) + ".jpg", img_input_normal);
-    imwrite("/home/umelab/imgFb_ws/src/softhand_mg400_img_control/img/simulate_with_obj/img_mask_obj_" + to_string(segment_N) + ".jpg", img_mask_obj);
-    imwrite("/home/umelab/imgFb_ws/src/softhand_mg400_img_control/img/simulate_with_obj/img_mask_hand_" + to_string(segment_N) + ".jpg", img_mask_hand);
-    imwrite("/home/umelab/imgFb_ws/src/softhand_mg400_img_control/img/simulate_with_obj/img_output_contact" + to_string(segment_N) + ".jpg", img_output_contact);
-    imwrite("/home/umelab/imgFb_ws/src/softhand_mg400_img_control/img/simulate_with_obj/img_output_est" + to_string(segment_N) + ".jpg", img_output_est);
-    imwrite("/home/umelab/imgFb_ws/src/softhand_mg400_img_control/img/simulate_with_obj/img_output_curve" + to_string(segment_N) + ".jpg", img_output_curve);
+    string output_path = "/home/umelab/imgFb_ws/src/softhand_mg400_img_control/img/simulate_with_obj/Pear";
+    imwrite(output_path + input_img_num + "_input_normal_" + to_string(segment_N) + ".jpg", img_input_normal);
+    imwrite(output_path + input_img_num + "_mask_obj_" + to_string(segment_N) + ".jpg", img_mask_obj);
+    imwrite(output_path + input_img_num + "_mask_hand_" + to_string(segment_N) + ".jpg", img_mask_hand);
+    imwrite(output_path + input_img_num + "_output_contact" + to_string(segment_N) + ".jpg", img_output_contact);
+    imwrite(output_path + input_img_num + "_output_est" + to_string(segment_N) + ".jpg", img_output_est);
+    imwrite(output_path + input_img_num + "_output_curve" + to_string(segment_N) + ".jpg", img_output_curve);
 
     // -----------------------------------------------------
     int key = waitKey(0);

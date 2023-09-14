@@ -60,7 +60,7 @@ int main(int argc, char** argv)
     ros::init(argc, argv, "setup");
 
     // input img
-    Mat img_input = imread("/home/umelab/imgFb_ws/src/softhand_mg400_img_control/img/roi_close.jpg");
+    Mat img_input = imread("/home/umelab/imgFb_ws/src/softhand_mg400_img_control/img/input_images/with obj/pear/poseB/121_roi_b.jpg");
     imshow("img_input", img_input);
     Mat img_output = img_input.clone();
 

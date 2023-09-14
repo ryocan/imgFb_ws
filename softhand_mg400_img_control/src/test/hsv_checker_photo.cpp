@@ -15,7 +15,7 @@ int main(int argc, char** argv)
     int hmin = 0, hmax = 179, smin = 0, smax = 255, vmin = 0, vmax = 255;
     int bmin = 0, bmax = 255, gmin = 0, gmax = 255, rmin = 0, rmax = 255;
 
-    Mat src = imread("/home/umelab/imgFb_ws/src/softhand_mg400_img_control/img/input_images/with obj/input_1a.jpg");
+    Mat src = imread("/home/umelab/imgFb_ws/src/softhand_mg400_img_control/img/input_images/with obj/pear/poseB/121_roi_a.jpg");
 
     namedWindow("Track Bar", (640, 200));
     createTrackbar("Hue min", "Track Bar", &hmin, 179);
