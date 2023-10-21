@@ -60,12 +60,12 @@ int main(int argc, char** argv)
     ros::init(argc, argv, "setup");
 
     // input img
-    Mat img_input = imread("/home/umelab/imgFb_ws/src/softhand_mg400_img_control/img/input_images/with obj/pear/poseB/121_roi_b.jpg");
+    Mat img_input = imread("/home/umelab/imgFb_ws/src/softhand_mg400_img_control/img/input_images/robosym/new2/setup/75_1_roi_b.jpg");
     imshow("img_input", img_input);
     Mat img_output = img_input.clone();
 
     // convert to mask img
-    Mat img_mask_hand = createMaskImg(img_input, 0, 179, 0, 255, 0, 65);
+    Mat img_mask_hand = createMaskImg(img_input, 0, 179, 0, 255, 0, 85);
     imshow("img_mask_hand", img_mask_hand);
 
     // findContours from img_mask
@@ -131,10 +131,10 @@ int main(int argc, char** argv)
     imshow("img_output2", img_output2);
     
     // output
-    imwrite("/home/umelab/imgFb_ws/src/softhand_mg400_img_control/img/setup/img_input.jpg", img_input);
-    imwrite("/home/umelab/imgFb_ws/src/softhand_mg400_img_control/img/setup/img_mask_hand.jpg", img_mask_hand);
-    imwrite("/home/umelab/imgFb_ws/src/softhand_mg400_img_control/img/setup/img_output.jpg", img_output);
-    imwrite("/home/umelab/imgFb_ws/src/softhand_mg400_img_control/img/setup/img_output2.jpg", img_output2);
+    imwrite("/home/umelab/imgFb_ws/src/softhand_mg400_img_control/result/new2/setup/img_input.jpg", img_input);
+    imwrite("/home/umelab/imgFb_ws/src/softhand_mg400_img_control/result/new2/setup/img_mask_hand.jpg", img_mask_hand);
+    imwrite("/home/umelab/imgFb_ws/src/softhand_mg400_img_control/result/new2/setup/img_output.jpg", img_output);
+    imwrite("/home/umelab/imgFb_ws/src/softhand_mg400_img_control/result/new2/setup/img_output2.jpg", img_output2);
 
     int key = waitKey(0);
     if (key == 'q')

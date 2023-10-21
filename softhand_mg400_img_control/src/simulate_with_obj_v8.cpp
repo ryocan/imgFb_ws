@@ -1,3 +1,6 @@
+// 手法改善(接触判定，長さ調整)
+// 70のとき
+
 //-----------------------------------------------------
 // INCLUDE FILES
 //-----------------------------------------------------
@@ -18,6 +21,9 @@
 #include <ros/package.h>
 #include <image_transport/image_transport.h>
 
+// csv
+#include <fstream>
+
 // namespace
 using namespace cv;
 using namespace std;
@@ -25,9 +31,11 @@ using namespace std;
 // DEFINES
 //-----------------------------------------------------
 // path
-string input_path = "/home/umelab/imgFb_ws/src/softhand_mg400_img_control/img/input_images/with obj/pear/poseB";
-string output_path = "/home/umelab/imgFb_ws/src/softhand_mg400_img_control/img/simulate_with_obj_5/pear/poseB";
-string input_img_num = "/131";
+int segment_N = 10;
+string input_img_num = "/75_1";
+string input_obj = "/star";
+string input_path = "/home/umelab/imgFb_ws/src/softhand_mg400_img_control/img/input_images/robosym/new2" + input_obj;
+string output_path = "/home/umelab/imgFb_ws/src/softhand_mg400_img_control/result/new2" + input_obj + input_img_num + "/";
 
 //  Image
 Mat img_input_normal;
@@ -41,18 +49,21 @@ Mat img_output_curve;
 int Flag = 0;
 
 // Calib
-double theta_setup = -0.471537;
+double theta_setup = -0.426985;
 // double length_setup = 233.;
 double length_setup = 0.;
-int segment_N = 10;
 double theta_segment_setup = 0.;
 double length_segment = 0.;
+double theta_accumulate_whole = 0;
+double theta_accumulate = 0;
+double theta_remain = 0.;
 
 // Point
 Point point_hand_bottom;
 Point point_hand_top;
 Point point_contact_1;
 Point point_contact_2;
+Point point_prev;
 
 // Curve estimation
 Point point_standard;
@@ -74,6 +85,7 @@ double theta_contact_2 = 0.;
 int segment_contact_2 = 0;
 double theta_segment_contact_2 = 0.;
 double theta_diff = 0.;
+double theta_segment_remain = 0.;
 
 // Result
 vector<Point> point_result_estimation;
@@ -107,7 +119,8 @@ vector<Point> getContours(Mat img_mask)
     // findContours from img_mask
     vector<vector<Point>> contours; 
     vector<Vec4i> hierarchy;
-    cv::findContours(img_mask, contours, hierarchy, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
+    // cv::findContours(img_mask, contours, hierarchy, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
+    cv::findContours(img_mask, contours, hierarchy, RETR_EXTERNAL, CHAIN_APPROX_NONE);    //8近傍mode
 
     // detect based on area info
     double area = 0.;
@@ -118,7 +131,7 @@ vector<Point> getContours(Mat img_mask)
     for (int i = 0; i < contours.size(); i++)
     {
         area = contourArea(contours[i]);
-        if (area > area_prev)
+        if (area > area_prev && area > 50)
         {
             contours_output.clear();
             contours_output = contours[i];
@@ -129,15 +142,19 @@ vector<Point> getContours(Mat img_mask)
     return contours_output;
 }
 
-void curveEstimation(int segment_start, int segment_end, double theta_segment)
+void curveEstimation(int segment_start, int segment_end, double theta_start, double theta_segment)
 {
-    double theta_accumulate = 0.;
+    double length_accumulate = 0.;
+
     cout << "----- < Curve Estimation > -----" << endl;
+    cout << "theta_segment: " << theta_segment << endl;
 
     for (int i = segment_start; i < segment_end; i++)  
     {
+        cout << "i: " << i << endl;
         // bending angle of each segment
-        theta_accumulate = theta_segment * (2 * i + 1);
+        theta_accumulate = theta_start + theta_segment * (2 * i + 1);
+        // theta_accumulate = theta_start + theta_segment * (2 * i + 1);
         cout << "theta_accumulate: " << theta_accumulate << endl;
         
         // calculated slope of the line from bending angle
@@ -147,24 +164,29 @@ void curveEstimation(int segment_start, int segment_end, double theta_segment)
         cout << "point_standard: " << point_standard << endl; 
 
         // estimate curve end point
-        int j = 0;
+        double j = 0.1;
         while(true)
         {
-            int y = point_standard.y + j;
+            double y = point_standard.y + j;
             double x = (y - point_standard.y) / slope + point_standard.x;
-            if( sqrt(pow(x - point_standard.x, 2) + pow(y - point_standard.y, 2)) > length_segment)
+
+            double diff_length = sqrt(pow(x - point_standard.x, 2) + pow(y - point_standard.y, 2));
+            
+            if( diff_length > length_segment)
             {
-                point_result_estimation.push_back(Point(x, (int)y));
-                point_standard = Point(x, (int)y);
-                cout << "-----" << endl;
+                point_result_estimation.push_back(Point(x, y));
+                point_standard = Point(x, y);
+                cout << "-----< " << diff_length << " >-----" << endl;
                 break;
             }
-            j++;
+            j += 0.1;
         }
     }
+
+    theta_accumulate_whole = atan2((point_result_estimation[point_result_estimation.size()-1].x - point_hand_bottom.x),(point_result_estimation[point_result_estimation.size()-1].y - point_hand_bottom.y));
 }
 
-void drawContours(vector<Point> contours, Mat img_mask, string mode, Mat img_black)
+void drawMyContours(vector<Point> contours, Mat img_mask, string mode, Mat img_black)
 {
     // declare for LineIterator
     Point li_start;
@@ -195,9 +217,18 @@ void drawContours(vector<Point> contours, Mat img_mask, string mode, Mat img_bla
         for (int k = 0; k < li_point.size(); k++)
         {
             if (mode == "obj")
+            {
                 img_black.at<Vec3b>(li_point[k].y, li_point[k].x) = Vec3b(0, 0, 255);
+                img_black.at<Vec3b>(li_point[k].y + 1, li_point[k].x) = Vec3b(0, 0, 255);
+                img_black.at<Vec3b>(li_point[k].y - 1, li_point[k].x) = Vec3b(0, 0, 255);
+            }
             else if (mode == "hand")
+            {
                 img_black.at<Vec3b>(li_point[k].y, li_point[k].x)[0] += 255; //overwrite on Hand's line
+                img_black.at<Vec3b>(li_point[k].y + 1, li_point[k].x)[0] += 255; //overwrite on Hand's line
+                img_black.at<Vec3b>(li_point[k].y - 1, li_point[k].x)[0] += 255; //overwrite on Hand's line
+            }
+
 
 
             if ((img_black.at<Vec3b>(li_point[k].y, li_point[k].x)) == Vec3b(255, 0, 255))
@@ -234,7 +265,7 @@ void calibResult()
 void handExtraction()
 {
     // create mask img
-    img_mask_hand = createMaskImg(img_input_normal, 0, 179, 0, 255, 0, 65);
+    img_mask_hand = createMaskImg(img_input_normal, 0, 179, 0, 255, 0, 70);
     imshow("img_mask_hand", img_mask_hand);
 
     // findContours from img_mask
@@ -306,31 +337,39 @@ void objExtractionRoi()
     Mat img_input_normal_roi(img_input_normal, cv::Rect(0, 0, point_hand_top.x + 20, point_hand_top.y));
     Mat img_mask_obj_roi = createMaskImg(img_input_normal_roi, 0, 15, 0, 255, 80, 255);
     imshow("img_mask_obj_roi", img_mask_obj_roi);
+    imwrite(output_path + input_img_num + "_" + to_string(segment_N) + "_mask_obj_roi"  + ".jpg", img_mask_obj_roi);
 
     // get contour
     vector<Point> contours_obj_roi;    
     contours_obj_roi = getContours(img_mask_obj_roi);
-
-    // find right/left endpoint
-    int Pobj_N = 0;  // endpoint of the object in the right side
-    int Pobj_x_prev = 0;
-
-    for (int i = 0; i < contours_obj_roi.size(); i++)
+    if(contours_obj_roi.empty())
     {
-        if(contours_obj_roi[i].x > Pobj_x_prev )
+        point_contact_1 = Point(0, 0);
+    }
+    else
+    {
+        // find right/left endpoint
+        int Pobj_N = 0;  // endpoint of the object in the right side
+        int Pobj_x_prev = 0;
+
+        for (int i = 0; i < contours_obj_roi.size(); i++)
         {
-            Pobj_x_prev = contours_obj_roi[i].x;
-            Pobj_N = i;
+            if(contours_obj_roi[i].x > Pobj_x_prev )
+            {
+                Pobj_x_prev = contours_obj_roi[i].x;
+                Pobj_N = i;
+            }
         }
+
+        // Substitution
+        point_contact_1 = contours_obj_roi[Pobj_N];
+
+        // Show
+        circle(img_output_contact, point_contact_1,  8, Scalar(255,   255,   255), -1);
+        circle(img_output_contact, point_contact_1,  6, Scalar(  0,   0,     255), -1);
+        imshow("img_output_contact", img_output_contact);
     }
 
-    // Substitution
-    point_contact_1 = contours_obj_roi[Pobj_N];
-
-    // Show
-    circle(img_output_contact, point_contact_1,  8, Scalar(255,   255,   255), -1);
-    circle(img_output_contact, point_contact_1,  6, Scalar(  0,   0,     255), -1);
-    imshow("img_output_contact", img_output_contact);
 }
 
 void objContour()
@@ -342,10 +381,10 @@ void objContour()
 }
 
 
-void circleForDetectContact()
+void circleForDetectContact(Point point_contact)
 {
-    double radius = length_setup - length_contact_1;
-    Point circle_center = point_contact_1;
+    double radius = length_segment;
+    Point circle_center = point_contact;
 
     cv::circle(img_black_circle, circle_center, radius, cv::Scalar(0,255,0), 1, cv::LINE_4);
     cv::circle(img_output_contact, circle_center, radius, cv::Scalar(0,255,0), 1, cv::LINE_4);
@@ -427,11 +466,16 @@ int main(int argc, char **argv)
                 // get info about point_contact_1
                 length_contact_1 = sqrt(pow(point_contact_1.x - point_hand_bottom.x, 2) + pow(point_contact_1.y - point_hand_bottom.y, 2));
                 theta_contact_1 = atan2((point_contact_1.x - point_hand_bottom.x),(point_contact_1.y - point_hand_bottom.y));
-                segment_contact_1 = round(length_contact_1 / length_setup * 10 );   // where to contact
+                segment_contact_1 = round(length_contact_1 / length_setup * segment_N );   // where to contact
                 theta_segment_contact_1 = theta_contact_1 / segment_contact_1;
+                cout << "length_contact_1: " << length_contact_1 << endl;
+                cout << "theta_contact_1: " << theta_contact_1 << endl;
+                cout << "segment_contact_1: " << segment_contact_1 << endl;
+                cout << "theta_segment_contact_1: " << theta_segment_contact_1 << endl;
 
                 // detection
-                if (length_contact_1 > length_setup || abs(theta_contact_1) > abs(theta_setup))
+                // if (length_contact_1 > length_setup || abs(theta_contact_1) > abs(theta_setup))
+                if (length_contact_1 > length_setup + 10 || point_contact_1 == Point(0, 0))
                     Flag = 1;
                 else
                     Flag = 2;
@@ -440,7 +484,9 @@ int main(int argc, char **argv)
             
             case 1: // 物体との接触が起こらないのであれば，ソフトハンド自体の変形で終わる
                 cout << "*** case 1 ***" << endl;
-                curveEstimation(0, segment_N, theta_segment_setup);    
+                point_result_estimation.push_back(point_standard);
+                curveEstimation(0, segment_N, 0, theta_segment_setup);    
+                Flag = 5;
                 break;
             
             case 2: 
@@ -448,68 +494,88 @@ int main(int argc, char **argv)
                 if(segment_contact_1 != segment_N)
                 {
                     Flag = 3;
+                    cout << "segment_contact_1 != segment_N" << endl;
                     break;
                 }
                 
                 // 指先のみの接触の時の推定
                 point_standard = point_hand_bottom;
                 point_result_estimation.push_back(point_standard);
-                curveEstimation(0, segment_N - 1, theta_contact_1/segment_N);
+                // curveEstimation(0, segment_N - 1, 0, theta_contact_1/segment_N);
+
+                theta_segment_remain = (theta_setup - theta_contact_1);
+                // curveEstimation(0, segment_N - 1, (-1)*(theta_segment_remain), theta_contact_1/segment_N);
+                curveEstimation(0, segment_N, (-1)*(theta_segment_remain), theta_segment_setup);
 
                 Flag = 5;
                 break;
             
             case 3:
                 cout << "*** case 3 ***" << endl;
-                // 2個目の接触点を探すための黒画像
-                img_black = Mat::zeros(img_input_normal.size(), img_input_normal.type());
-                img_black_circle = img_black.clone();
 
-                // 物体の輪郭
-                objContour();
+                curveEstimation(0, segment_contact_1, 0, theta_segment_contact_1);
+                theta_remain = theta_setup -theta_contact_1;
+                theta_segment_contact_2 = (theta_setup - theta_contact_1) / segment_contact_2;
 
-                // 円の描画
-                circleForDetectContact();
-
-                // Line Iterator
-                drawContours(contours_obj, img_mask_obj, "obj", img_black);
-                drawContours(contours_circle, img_mask_black_circle, "hand", img_black);
-                imshow("img_black", img_black);
-
-                // 第二の接触点
-                cout << "point_contact_2: " << point_contact_2 << endl;
-                circle(img_output_contact, point_contact_2,  8, Scalar(255,   255,   255), -1);
-                circle(img_output_contact, point_contact_2,  6, Scalar(  0,   255,   0), -1);
-                imshow("img_output_contact", img_output_contact);
-
-                // 第二の接触点までの角度算出
-                theta_contact_2 = atan2((point_contact_2.x - point_contact_1.x),(point_contact_2.y - point_contact_1.y));
                 segment_contact_2 = segment_N - segment_contact_1;
+                point_prev = point_contact_1;
 
-                if(abs(theta_contact_2) > abs(theta_setup - theta_contact_1))
+                for (int i  = 0; i < segment_contact_2; i++)
                 {
-                    Flag = 4;
-                    break;
+                    img_black = Mat::zeros(img_input_normal.size(), img_input_normal.type());
+                    img_black_circle = img_black.clone();
+
+                    // 物体の輪郭
+                    objContour();
+                    imwrite(output_path + input_img_num + "_mask_obj_" + to_string(segment_N) + ".jpg", img_mask_obj);
+
+                    // 円の描画
+                    circleForDetectContact(point_prev);
+
+                    // Line Iterator
+                    drawMyContours(contours_obj, img_mask_obj, "obj", img_black);
+                    drawMyContours(contours_circle, img_mask_black_circle, "hand", img_black);
+                    imshow("img_black", img_black);
+
+                    // 第二の接触点
+                    cout << "#######################################" << endl;
+                    theta_remain = theta_setup - theta_accumulate_whole;
+                    cout << "theta_remain: " << theta_remain << endl;
+                    cout << "point_contact_2: " << point_contact_2 << endl;
+                    circle(img_output_contact, point_contact_2,  8, Scalar(255,   255,   255), -1);
+                    circle(img_output_contact, point_contact_2,  6, Scalar(  0,   255,   0), -1);
+                    imshow("img_output_contact", img_output_contact);
+
+
+                    theta_contact_2 = atan2((point_contact_2.x - point_prev.x),(point_contact_2.y - point_prev.y));
+                    circle(img_output_contact, point_prev,  6, Scalar(  0,   0,   255), -1);
+                    line(img_output_contact, point_contact_2, point_prev, Scalar(255, 255, 255), 3, 8);
+
+                    point_standard = point_prev;
+                    cout << "theta_contact_2: " << theta_contact_2 << endl;
+
+                    cout << "check" << atan2((point_prev.x - point_hand_bottom.x),(point_prev.y - point_hand_bottom.y)) << endl;
+                    cout << "theta_accumulate_whole: " << theta_accumulate_whole << endl;
+                    cout << "theta_contact_2 - theta_accumulate_whole: " << theta_contact_2 - theta_accumulate_whole << endl;
+                    cout << "theta_segment_contact_2: " << theta_segment_contact_2 << endl;
+                    cout << "point_standard: " << point_standard << endl;
+
+                    if(theta_contact_2 - theta_accumulate_whole < theta_segment_contact_2)
+                    {
+                        cout << "theta_contact_2 is Bigger" << endl;
+                        curveEstimation(0, 1, theta_accumulate_whole, theta_segment_contact_2);
+                    }
+                    else
+                    {
+                        cout << "theta_contact_2 is Smaller" << endl;
+                        curveEstimation(0, 1, 0, theta_contact_2);
+                    }
+                    cout << "#######################################" << endl;
+                    
+                    point_prev = point_result_estimation[point_result_estimation.size()-1];
+
                 }
 
-                // めりこむときの輪郭描画
-                point_result_estimation.push_back(point_standard);
-                curveEstimation(0, segment_contact_1, theta_segment_contact_1);
-                curveEstimation(0, segment_contact_2, theta_contact_2/ segment_contact_2);
-
-                theta_diff = theta_setup - theta_contact_1 - theta_contact_2;
-                // curveEstimation(0, segment_contact_1, theta_segment_contact_1 - theta_diff/segment_contact_1);
-                // curveEstimation(0, segment_contact_2, theta_contact_2/ segment_contact_2 + theta_diff/segment_contact_2);
-
-                Flag = 5;
-                break;
-            
-            case 4:
-                point_result_estimation.push_back(point_standard);
-                curveEstimation(0, segment_contact_1, theta_segment_contact_1);
-                curveEstimation(0, segment_contact_2, (theta_setup - theta_contact_1)/ segment_contact_2);
-                Flag = 5;
-                break;
 
             default:
                 Flag = 5;
@@ -537,79 +603,112 @@ int main(int argc, char **argv)
     imshow("img_output_est", img_output_est);
     
     // ------------------------- < VALIDITATION > ----------------------------
-    // Mat img_mask_valid = createMaskImg(img_input_curve, 0, 179, 0, 255, 0, 65);
-    // imshow("img_mask_valid", img_mask_valid);
+    Mat img_mask_valid = createMaskImg(img_input_curve, 0, 179, 0, 255, 0, 85);
+    imshow("img_mask_valid", img_mask_valid);
 
-    // // findContours from img_mask
-    // vector<Point> contours_valid;    
-    // contours_valid = getContours(img_mask_valid);
+    // findContours from img_mask
+    vector<Point> contours_valid;    
+    contours_valid = getContours(img_mask_valid);
     
-    // // find bottom and left endpoint
-    // int n_left = 0;
-    // int n_bottom = 0;
+    // find bottom and left endpoint
+    int n_left = 0;
+    int n_bottom = 0;
 
-    // int n_left_prev = 1000;
-    // int n_bottom_prev = 1000;
-    // for (int i = 0; i < contours_valid.size(); i++)
-    // {
-    //     if(contours_valid[i].y < n_bottom_prev)
-    //     {
-    //         n_bottom_prev = contours_valid[i].x;
-    //         n_bottom = i;
-    //     }
-    //     if(contours_valid[i].x < n_left_prev || contours_valid[i].y > 5000)
-    //     {
-    //         n_left_prev = contours_valid[i].x;
-    //         n_left = i;
-    //     }
-    // }
+    int n_left_prev = 1000;
+    int n_bottom_prev = 1000;
+    for (int i = 0; i < contours_valid.size(); i++)
+    {
+        if(contours_valid[i].y < n_bottom_prev)
+        {
+            n_bottom_prev = contours_valid[i].x;
+            n_bottom = i;
+        }
+        if(contours_valid[i].x < n_left_prev || contours_valid[i].y > 5000)
+        {
+            n_left_prev = contours_valid[i].x;
+            n_left = i;
+        }
+    }
 
-    // // get points between n_left and n_bottom
-    // Mat img_input_valid = img_input_curve.clone();
-    // cout << "n_bottom = " << n_bottom << ", n_left: " << n_left << endl;
+    // get points between n_left and n_bottom
+    Mat img_input_valid = img_input_curve.clone();
+    Mat img_overlap_valid = img_output_curve.clone();
+    cout << "n_bottom = " << n_bottom << ", n_left: " << n_left << endl;
     
-    // vector<Point> contours_valid_extract;  
-    // // Point point_prev = contours_valid[n_bottom];
-    // // double length_valid = 0.;
-    // // for(int i = n_bottom; i <= n_left; i++)
-    // // {
-    // //     double x = contours_valid[i].x - point_prev.x;
-    // //     double y = contours_valid[i].y - point_prev.y;
-    // //     length_valid += sqrt(pow(x, 2) + pow(y, 2));
+    // draw debug
+    Point valid_start = point_hand_bottom;
+    vector<Point> point_valification;
 
-    // //     if (length_valid > length_segment)
-    // //     {
-    // //         circle(img_input_valid, contours_valid[i],  6, Scalar(0,  255,   0), -1);
-    // //         contours_valid_extract.push_back(contours_valid[i]);
-    // //         length_valid = 0;
-    // //     }
+    point_valification.push_back(valid_start);
+    circle(img_input_valid, valid_start,  8, Scalar(255,  255,   255), -1);
+    circle(img_input_valid, valid_start,  6, Scalar(0,  255,   0), -1);
+    circle(img_overlap_valid, valid_start,  8, Scalar(255,  255,   255), -1);
+    circle(img_overlap_valid, valid_start,  6, Scalar(0,  255,   0), -1);
+    circle(img_input_valid, contours_valid[n_left],  6, Scalar(255,  255,   0), -1);
 
-    // //     point_prev = contours_valid[i];
+    for(int i = 0; i <= n_left; i++)
+    {
+        Point valid_now = contours_valid[i];
+        
+        double valid_length = sqrt(pow(valid_start.x - valid_now.x ,2) + pow(valid_start.y - valid_now.y, 2));
+        if(valid_length > length_segment)
+        {
+            circle(img_input_valid, contours_valid[i],  8, Scalar(255,  255,   255), -1);
+            circle(img_input_valid, contours_valid[i],  6, Scalar(0,  255,   0), -1);
 
-    // // }
+            circle(img_overlap_valid, contours_valid[i],  8, Scalar(255,  255,   255), -1);
+            circle(img_overlap_valid, contours_valid[i],  6, Scalar(0,  255,   0), -1);
+            valid_start = contours_valid[i];
+            point_valification.push_back(contours_valid[i]);
+        }
+    }
 
-    // for(int i = n_bottom; i <= n_left; i++)
-    //     contours_valid_extract.push_back(contours_valid[i]);
-    
-    // Mat img_black_valid = Mat::zeros(img_input_normal.size(), img_input_normal.type());
-    // vector<vector<Point>> contours_valid_draw;
-    // contours_valid_draw.push_back(contours_valid);
+    if(point_valification.size() < (segment_N + 1))
+    {
+        point_valification.push_back(contours_valid[n_left]);
+        circle(img_overlap_valid, contours_valid[n_left],  8, Scalar(255,  255,   255), -1);
+        circle(img_overlap_valid, contours_valid[n_left],  6, Scalar(0,  255,   0), -1);
+    }
 
-    // for (int i = 0; i < contours_valid_draw.size(); i++)
-    //     drawContours(img_black_valid, contours_valid_draw, (int)i, Scalar(0, 255, 0));
-    
-    // validation(contours_valid, img_mask_valid, "obj", img_black_valid);
+    imshow("valid", img_input_valid);
+    imshow("valid overlap", img_overlap_valid);
 
-    // imshow("img_black_valid", img_black_valid);
-    // imshow("img_input_valid", img_input_valid);
+    // valification output
+    std::ofstream csv_writing_file;
+    std::string filename = output_path + "result.csv";
+    csv_writing_file.open(filename, std::ios::app);
 
-    // ------------------------- < SAVE > ----------------------------
-    imwrite(output_path + input_img_num + "_input_normal_" + to_string(segment_N) + ".jpg", img_input_normal);
-    imwrite(output_path + input_img_num + "_mask_obj_" + to_string(segment_N) + ".jpg", img_mask_obj);
-    imwrite(output_path + input_img_num + "_mask_hand_" + to_string(segment_N) + ".jpg", img_mask_hand);
-    imwrite(output_path + input_img_num + "_output_contact" + to_string(segment_N) + ".jpg", img_output_contact);
-    imwrite(output_path + input_img_num + "_output_est" + to_string(segment_N) + ".jpg", img_output_est);
-    imwrite(output_path + input_img_num + "_output_curve" + to_string(segment_N) + ".jpg", img_output_curve);
+    csv_writing_file << "estimation.x" << "," << "estimation.y" << "," << "valification.x" << "," << "valification.y" << "," << "diff" << endl;
+    for(int i = 0; i < point_valification.size(); i++)
+    {
+        double diff = sqrt(pow(point_result_estimation[i].x - point_valification[i].x ,2) + pow(point_result_estimation[i].y - point_valification[i].y ,2));
+
+        csv_writing_file << point_result_estimation[i].x 
+                            << "," 
+                            << point_result_estimation[i].y 
+                            << "," 
+                            << point_valification[i].x 
+                            << "," 
+                            << point_valification[i].y
+                            << ","
+                            << diff        
+                            << endl; 
+    }
+    csv_writing_file.close();
+
+        // ------------------------- < SAVE > ----------------------------
+    imwrite(output_path + input_img_num + "_" + to_string(segment_N) + "_input_normal_" + ".jpg", img_input_normal);
+    imwrite(output_path + input_img_num + "_" + to_string(segment_N) + "_input_curve_" + ".jpg", img_input_curve);
+
+    imwrite(output_path + input_img_num + "_" + to_string(segment_N) + "_mask_hand_" + ".jpg", img_mask_hand);
+
+    imwrite(output_path + input_img_num + "_" + to_string(segment_N) + "_output_contact" + ".jpg", img_output_contact);
+    imwrite(output_path + input_img_num + "_" + to_string(segment_N) + "_output_est" + ".jpg", img_output_est);
+    imwrite(output_path + input_img_num + "_" + to_string(segment_N) + "_output_curve" + ".jpg", img_output_curve);
+
+    imwrite(output_path + input_img_num + "_" + to_string(segment_N) + "_output_valid" + ".jpg", img_input_valid);
+    imwrite(output_path + input_img_num + "_" + to_string(segment_N) + "_output_valid_overlap" + ".jpg", img_overlap_valid);
+
 
     // ------------------------- < END > ----------------------------
     int key = waitKey(0);
