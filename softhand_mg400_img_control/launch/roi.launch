@@ -1,0 +1,5 @@
+<launch>
+    <node name="roi" pkg="softhand_mg400_img_control" type="roi" required="true" output="screen">
+        <rosparam command="load" file="$(find softhand_mg400_img_control)/config/param_roi.yaml" />
+    </node>
+</launch>

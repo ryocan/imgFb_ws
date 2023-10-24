@@ -1,0 +1,114 @@
+[33mcommit 9f3a138c90fc5c3bc21b2969109a0740cb3e1cf6[m[33m ([m[1;36mHEAD -> [m[1;32mmaster[m[33m, [m[1;31morigin/main[m[33m)[m
+Author: ryocan <55ryogo55@gmail.com>
+Date:   Sat Oct 21 14:35:04 2023 +0900
+
+    after Robosinn
+
+[33mcommit b02d92a04021a68f4cded220c6b3b051f1f9f502[m
+Author: ryocan <55ryogo55@gmail.com>
+Date:   Mon Sep 25 20:56:10 2023 +0900
+
+    v6
+
+[33mcommit da82927f67dbc901db3fc64660635c5dadfc7246[m
+Author: ryocan <55ryogo55@gmail.com>
+Date:   Wed Sep 20 20:53:16 2023 +0900
+
+    add v5
+
+[33mcommit 742b4f296636ad0986accc34ee6841449260b91b[m
+Author: ryocan <55ryogo55@gmail.com>
+Date:   Thu Sep 14 13:10:13 2023 +0900
+
+    update src files
+
+[33mcommit a0c5286760d446645c674bf8398fd4c5adaa4cf5[m
+Author: ryocan <55ryogo55@gmail.com>
+Date:   Fri Aug 25 19:37:50 2023 +0900
+
+    add simu
+
+[33mcommit b1eb44324da41641256822e063a9468690ec4169[m
+Author: ryocan <55ryogo55@gmail.com>
+Date:   Fri Aug 25 18:16:59 2023 +0900
+
+    add simu
+
+[33mcommit f8b12f032e397d4a5219425c578f187e76083e7c[m
+Author: ryocan <55ryogo55@gmail.com>
+Date:   Wed Aug 23 13:05:53 2023 +0900
+
+    add setup
+
+[33mcommit 6cfc8ce1746d35e22387ce63592d7535ae9457c6[m
+Author: ryocan <55ryogo55@gmail.com>
+Date:   Mon Aug 21 13:07:26 2023 +0900
+
+    add G2_230701
+
+[33mcommit ab05e1b839375ff7bcd46b4d5ca8000a432f732d[m
+Author: ryocan <55ryogo55@gmail.com>
+Date:   Mon Jun 19 15:57:16 2023 +0900
+
+    update softhand_mg400_img_control
+
+[33mcommit f677d9427f686b91c97edd6cc775a88779cc31d8[m
+Author: ryocan <55ryogo55@gmail.com>
+Date:   Sat Jun 10 19:27:46 2023 +0900
+
+    revise readme
+
+[33mcommit f5e54c0e6b186cc348f40b9a67a31a6fb432d31e[m
+Author: ryocan <55ryogo55@gmail.com>
+Date:   Sat Jun 10 19:24:22 2023 +0900
+
+    revise readme
+
+[33mcommit bdc545fb6c41e98b00710a7ba3088a1d531a4ab9[m
+Merge: a8359d2 ad132e9
+Author: ryocan <55ryogo55@gmail.com>
+Date:   Sat Jun 10 19:18:29 2023 +0900
+
+    add readme
+
+[33mcommit a8359d2c318b63190a46a038ade0c35700ea5614[m
+Author: ryocan <55ryogo55@gmail.com>
+Date:   Sat Jun 10 19:17:03 2023 +0900
+
+    test
+
+[33mcommit da102271abc8729a96e439d054fbabf3917cea3c[m
+Author: ryocan <55ryogo55@gmail.com>
+Date:   Sat Jun 10 19:15:42 2023 +0900
+
+    add readme
+
+[33mcommit ad132e984e03ab8000fb2d78b797c36d0b9e0704[m
+Author: ryocan <59140272+ryocan@users.noreply.github.com>
+Date:   Sat Jun 10 19:12:29 2023 +0900
+
+    Create README.md
+
+[33mcommit 476de7e9f610cb329729e9fbff98e7fd8726e339[m
+Author: ryocan <55ryogo55@gmail.com>
+Date:   Sat Jun 10 19:10:26 2023 +0900
+
+    add softhand_mg400_img_control
+
+[33mcommit ca3411c655e55ee5fde97be68c2dbe02a1fcf94a[m
+Author: ryocan <55ryogo55@gmail.com>
+Date:   Sat Jun 10 15:46:37 2023 +0900
+
+    push test
+
+[33mcommit 3095a59e004a6514d7b1ef4f4b6e64315e64a30b[m
+Author: ryocan <55ryogo55@gmail.com>
+Date:   Fri Jun 9 11:16:02 2023 +0900
+
+    test
+
+[33mcommit 3f1d2731c8aa2244a7bee9675ae7a9c1828fccbb[m
+Author: ryocan <55ryogo55@gmail.com>
+Date:   Fri Jun 9 11:12:26 2023 +0900
+
+    230609

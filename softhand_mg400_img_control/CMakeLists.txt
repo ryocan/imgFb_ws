@@ -220,9 +220,42 @@ target_link_libraries(setup ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 add_executable(simulate src/simulate.cpp)
 target_link_libraries(simulate ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 
+
+# simulate
+add_executable(simulate_v2 src/simulate_v2.cpp)
+target_link_libraries(simulate_v2 ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+
 # simulate with obj
-add_executable(simulate_with_obj src/simulate_with_obj.cpp)
-target_link_libraries(simulate_with_obj ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+add_executable(simulate_with_obj_v1 src/simulate_with_obj_v1.cpp)
+target_link_libraries(simulate_with_obj_v1 ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+
+# simulate with obj v2
+add_executable(simulate_with_obj_v2 src/simulate_with_obj_v2.cpp)
+target_link_libraries(simulate_with_obj_v2 ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+
+# simulate with obj v3
+add_executable(simulate_with_obj_v3 src/simulate_with_obj_v3.cpp)
+target_link_libraries(simulate_with_obj_v3 ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+
+# simulate with obj v4
+add_executable(simulate_with_obj_v4 src/simulate_with_obj_v4.cpp)
+target_link_libraries(simulate_with_obj_v4 ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+
+# simulate with obj v5
+add_executable(simulate_with_obj_v5 src/simulate_with_obj_v5.cpp)
+target_link_libraries(simulate_with_obj_v5 ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+
+# simulate with obj v6
+add_executable(simulate_with_obj_v6 src/simulate_with_obj_v6.cpp)
+target_link_libraries(simulate_with_obj_v6 ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+
+# simulate with obj v7
+add_executable(simulate_with_obj_v7 src/simulate_with_obj_v7.cpp)
+target_link_libraries(simulate_with_obj_v7 ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+
+# simulate with obj v8
+add_executable(simulate_with_obj_v8 src/simulate_with_obj_v8.cpp)
+target_link_libraries(simulate_with_obj_v8 ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 
 # roi
 add_executable(roi src/roi.cpp)

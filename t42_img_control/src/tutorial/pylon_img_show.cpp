@@ -25,7 +25,8 @@ pylon_image
 using namespace std;
 using namespace cv;
 
-  Mat src_color;
+Mat src_color;
+int i = 0;
 //-----------------------------------------------------
 // FUNCTIONS
 //-----------------------------------------------------
@@ -45,7 +46,13 @@ void imgCb(const sensor_msgs::ImageConstPtr& msg)
     }
 
     cv::imshow("src_color", src_color);
-    waitKey(1);
+    int key = waitKey(1);
+    if (key == 'q')
+    {
+        imwrite("/home/umelab/Downloads/img_input" + to_string(i) + ".jpg", src_color);
+        i++;
+    }
+            
 }
 
 //-----------------------------------------------------
